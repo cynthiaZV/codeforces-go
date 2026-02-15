@@ -3,11 +3,12 @@ package main
 import (
 	. "fmt"
 	"io"
+	"slices"
 )
 
 // https://github.com/EndlessCheng
 func cf1980C(in io.Reader, out io.Writer) {
-	var T, n, m, w int
+	var T, n, m int
 	for Fscan(in, &T); T > 0; T-- {
 		Fscan(in, &n)
 		a := make([]int, n)
@@ -15,16 +16,14 @@ func cf1980C(in io.Reader, out io.Writer) {
 			Fscan(in, &a[i])
 		}
 
-		left := 0
+		b := make([]int, n)
 		need := map[int]int{}
-		has := map[int]bool{}
-		for _, v := range a {
-			Fscan(in, &w)
-			if v != w {
-				need[w]++
+		left := 0
+		for i, v := range a {
+			Fscan(in, &b[i])
+			if v != b[i] {
+				need[b[i]]++
 				left++
-			} else {
-				has[w] = true
 			}
 		}
 
@@ -34,7 +33,7 @@ func cf1980C(in io.Reader, out io.Writer) {
 			Fscan(in, &d[i])
 		}
 
-		if need[d[m-1]] == 0 && !has[d[m-1]] {
+		if !slices.Contains(b, d[m-1]) {
 			Fprintln(out, "NO")
 			continue
 		}
