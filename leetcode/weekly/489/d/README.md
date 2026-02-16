@@ -4,7 +4,7 @@
 2. [前缀和](https://leetcode.cn/problems/range-sum-query-immutable/solution/qian-zhui-he-ji-qi-kuo-zhan-fu-ti-dan-py-vaar/)
 3. [421. 数组中两个数的最大异或值](https://leetcode.cn/problems/maximum-xor-of-two-numbers-in-an-array/)
 
-## 思路
+## 方法一：0-1 字典树（异或字典树）
 
 「最大值与最小值之间的差值不超过 $k$」这个约束和 1438 题是一样的，用滑动窗口和单调队列解决。
 
@@ -149,20 +149,20 @@ class Trie {
 class Solution {
     public int maxXor(int[] nums, int k) {
         int n = nums.length;
-        int[] pre = new int[n + 1];
+        int[] sum = new int[n + 1];
         for (int i = 0; i < n; i++) {
-            pre[i + 1] = pre[i] ^ nums[i];
+            sum[i + 1] = sum[i] ^ nums[i];
         }
 
         Trie t = new Trie();
-        ArrayDeque<Integer> minQ = new ArrayDeque<>();
+        ArrayDeque<Integer> minQ = new ArrayDeque<>(); // 更快的写法见【Java 数组】
         ArrayDeque<Integer> maxQ = new ArrayDeque<>();
         int ans = 0;
         int left = 0;
 
         for (int right = 0; right < n; right++) {
             // 1. 入
-            t.put(pre[right]);
+            t.put(sum[right]);
 
             int x = nums[right];
             while (!minQ.isEmpty() && x <= nums[minQ.peekLast()]) {
@@ -177,7 +177,7 @@ class Solution {
 
             // 2. 出
             while (nums[maxQ.peekFirst()] - nums[minQ.peekFirst()] > k) {
-                t.del(pre[left]);
+                t.del(sum[left]);
                 left++;
                 if (minQ.peekFirst() < left) {
                     minQ.pollFirst();
@@ -188,7 +188,106 @@ class Solution {
             }
 
             // 3. 更新答案
-            ans = Math.max(ans, t.maxXor(pre[right + 1]));
+            ans = Math.max(ans, t.maxXor(sum[right + 1]));
+        }
+
+        return ans;
+    }
+}
+```
+
+```java [sol-Java 数组]
+class Trie {
+    private static final int WIDTH = 15; // nums[i] 二进制长度的最大值
+
+    private static class Node {
+        Node[] son = new Node[2];
+        int leaf; // 子树叶子个数
+    }
+
+    private final Node root = new Node();
+
+    public void put(int val) {
+        Node cur = root;
+        for (int i = WIDTH - 1; i >= 0; i--) {
+            int bit = val >> i & 1;
+            if (cur.son[bit] == null) {
+                cur.son[bit] = new Node();
+            }
+            cur = cur.son[bit];
+            cur.leaf++;
+        }
+    }
+
+    public void del(int val) {
+        Node cur = root;
+        for (int i = WIDTH - 1; i >= 0; i--) {
+            int bit = val >> i & 1;
+            cur = cur.son[bit];
+            cur.leaf--; // 如果减成 0 了，说明子树是空的，可以理解成 cur is None
+        }
+    }
+
+    public int maxXor(int val) {
+        Node cur = root;
+        int ans = 0;
+        for (int i = WIDTH - 1; i >= 0; i--) {
+            int bit = val >> i & 1;
+            if (cur.son[bit ^ 1] != null && cur.son[bit ^ 1].leaf > 0) {
+                ans |= 1 << i;
+                bit ^= 1;
+            }
+            cur = cur.son[bit];
+        }
+        return ans;
+    }
+}
+
+class Solution {
+    public int maxXor(int[] nums, int k) {
+        int n = nums.length;
+        int[] sum = new int[n + 1];
+        for (int i = 0; i < n; i++) {
+            sum[i + 1] = sum[i] ^ nums[i];
+        }
+
+        Trie t = new Trie();
+        int[] minQ = new int[n];
+        int[] maxQ = new int[n];
+        int minHead = 0, minTail = -1;
+        int maxHead = 0, maxTail = -1;
+        int ans = 0;
+        int left = 0;
+
+        for (int right = 0; right < n; right++) {
+            // 1. 入
+            t.put(sum[right]);
+
+            int x = nums[right];
+            while (minHead <= minTail && x <= nums[minQ[minTail]]) {
+                minTail--; // 右边出队
+            }
+            minQ[++minTail] = right; // 右边入队
+
+            while (maxHead <= maxTail && x >= nums[maxQ[maxTail]]) {
+                maxTail--; // 右边出队
+            }
+            maxQ[++maxTail] = right; // 右边入队
+
+            // 2. 出
+            while (nums[maxQ[maxHead]] - nums[minQ[minHead]] > k) {
+                t.del(sum[left]);
+                left++;
+                if (minQ[minHead] < left) { // 队首不在窗口中
+                    minHead++; // 左边出队
+                }
+                if (maxQ[maxHead] < left) { // 队首不在窗口中
+                    maxHead++; // 左边出队
+                }
+            }
+
+            // 3. 更新答案
+            ans = Math.max(ans, t.maxXor(sum[right + 1]));
         }
 
         return ans;
@@ -387,6 +486,276 @@ func maxXor(nums []int, k int) (ans int) {
 
 - 时间复杂度：$\mathcal{O}(n\log U)$，其中 $n$ 是 $\textit{nums}$ 的长度，$U=\max(\textit{nums})$。
 - 空间复杂度：$\mathcal{O}(n\log U)$。
+
+## 方法二：试填法
+
+请先阅读 [421 题我的题解](https://leetcode.cn/problems/maximum-xor-of-two-numbers-in-an-array/solutions/2511644/tu-jie-jian-ji-gao-xiao-yi-tu-miao-dong-1427d/)。
+
+对于本题，我们要计算 $s[r+1]$ 与 $i$ 在 $[l,r]$ 中的一个 $s[i]$ 的异或值，其高位是否等于目标值 $\textit{newAns}$。
+
+运用 421 题的技巧，转化成判断是否存在一个 $s[i]$，其高位等于 $s[r+1]\oplus \textit{newAns}$ 的高位，且 $i$ 在 $[l,r]$ 中。
+
+在 421 题中，我们只需记录是否存在前缀和；本题需要记录前缀和**最近一次出现的位置** $\textit{last}$。
+
+为了避免反复滑动窗口，可以**预处理**一个数组 $\textit{lefts}$，表示当窗口右端点在 $\textit{right}$ 时，窗口左端点在 $\textit{lefts}[\textit{right}]$。
+
+```py [sol-Python3]
+class Solution:
+    def maxXor(self, nums: list[int], k: int) -> int:
+        # 预处理：当窗口右端点在 right 时，窗口左端点在 lefts[right]
+        n = len(nums)
+        lefts = [0] * n
+        min_q = deque()
+        max_q = deque()
+        left = 0
+        for right, x in enumerate(nums):
+            # 1. 入
+            while min_q and x <= nums[min_q[-1]]:
+                min_q.pop()
+            min_q.append(right)
+
+            while max_q and x >= nums[max_q[-1]]:
+                max_q.pop()
+            max_q.append(right)
+
+            # 2. 出
+            while nums[max_q[0]] - nums[min_q[0]] > k:
+                left += 1
+                if min_q[0] < left:
+                    min_q.popleft()
+                if max_q[0] < left:
+                    max_q.popleft()
+
+            # 3. 记录此时的 left
+            lefts[right] = left
+
+        pre = list(accumulate(nums, xor, initial=0))
+
+        # 试填法
+        width = max(nums).bit_length()
+        ans = 0
+        for i in range(width - 1, -1, -1):
+            last = [-1] * (1 << (width - i))
+            last[0] = 0  # pre[0] = 0 的位置是 0
+            ans <<= 1
+            new_ans = ans | 1
+            for right in range(n):
+                s = pre[right + 1] >> i  # 去掉低位，只看高位
+                if last[new_ans ^ s] >= lefts[right]:  # new_ans ^ s 存在，且在窗口内
+                    ans = new_ans  # 最终答案第 i 位填 1
+                    break
+                last[s] = right + 1
+
+        return ans
+```
+
+```java [sol-Java]
+class Solution {
+    public int maxXor(int[] nums, int k) {
+        // 预处理：当窗口右端点在 right 时，窗口左端点在 lefts[right]
+        // 顺带算出前缀异或和、nums 的最大值
+        int n = nums.length;
+        int[] lefts = new int[n];
+        int[] sum = new int[n + 1];
+        int mx = 0;
+
+        int[] minQ = new int[n];
+        int[] maxQ = new int[n];
+        int minHead = 0, minTail = -1;
+        int maxHead = 0, maxTail = -1;
+        int left = 0;
+
+        for (int right = 0; right < n; right++) {
+            int x = nums[right];
+            sum[right + 1] = sum[right] ^ x;
+            mx = Math.max(mx, x);
+
+            // 1. 入
+            while (minHead <= minTail && x <= nums[minQ[minTail]]) {
+                minTail--; // 右边出队
+            }
+            minQ[++minTail] = right; // 右边入队
+
+            while (maxHead <= maxTail && x >= nums[maxQ[maxTail]]) {
+                maxTail--; // 右边出队
+            }
+            maxQ[++maxTail] = right; // 右边入队
+
+            // 2. 出
+            while (nums[maxQ[maxHead]] - nums[minQ[minHead]] > k) {
+                left++;
+                if (minQ[minHead] < left) { // 队首不在窗口中
+                    minHead++; // 左边出队
+                }
+                if (maxQ[maxHead] < left) { // 队首不在窗口中
+                    maxHead++; // 左边出队
+                }
+            }
+
+            // 3. 记录此时的 left
+            lefts[right] = left;
+        }
+
+        // 试填法
+        int width = 32 - Integer.numberOfLeadingZeros(mx);
+        int[] last = new int[1 << width];
+        int ans = 0;
+
+        for (int i = width - 1; i >= 0; i--) {
+            Arrays.fill(last, 0, 1 << (width - i), -1);
+            last[0] = 0; // sum[0] = 0 的位置是 0
+            ans <<= 1;
+            int newAns = ans | 1;
+            for (int right = 0; right < n; right++) {
+                int s = sum[right + 1] >> i; // 去掉低位，只看高位
+                if (last[newAns ^ s] >= lefts[right]) { // newAns ^ s 存在，且在窗口内
+                    ans = newAns; // 最终答案第 i 位填 1
+                    break;
+                }
+                last[s] = right + 1;
+            }
+        }
+
+        return ans;
+    }
+}
+```
+
+```cpp [sol-C++]
+class Solution {
+public:
+    int maxXor(vector<int>& nums, int k) {
+        // 预处理：当窗口右端点在 right 时，窗口左端点在 lefts[right]
+        // 顺带算出前缀异或和、nums 的最大值
+        int n = nums.size();
+        vector<int> lefts(n);
+        vector<int> sum(n + 1);
+        int mx = 0;
+        deque<int> min_q, max_q;
+        int left = 0;
+        for (int right = 0; right < n; right++) {
+            int x = nums[right];
+            sum[right + 1] = sum[right] ^ x;
+            mx = max(mx, x);
+
+            // 1. 入
+            while (!min_q.empty() && x <= nums[min_q.back()]) {
+                min_q.pop_back();
+            }
+            min_q.push_back(right);
+
+            while (!max_q.empty() && x >= nums[max_q.back()]) {
+                max_q.pop_back();
+            }
+            max_q.push_back(right);
+
+            // 2. 出
+            while (nums[max_q.front()] - nums[min_q.front()] > k) {
+                left++;
+                if (min_q.front() < left) {
+                    min_q.pop_front();
+                }
+                if (max_q.front() < left) {
+                    max_q.pop_front();
+                }
+            }
+
+            // 3. 记录此时的 left
+            lefts[right] = left;
+        }
+
+        // 试填法
+        int width = bit_width((uint32_t) mx);
+        vector<int> last(1 << width);
+        int ans = 0;
+        for (int i = width - 1; i >= 0; i--) {
+            fill(last.begin(), last.begin() + (1 << (width - i)), -1);
+            last[0] = 0; // sum[0] = 0 的位置是 0
+            ans <<= 1;
+            int new_ans = ans | 1;
+            for (int right = 0; right < n; right++) {
+                int s = sum[right + 1] >> i; // 去掉低位，只看高位
+                if (last[new_ans ^ s] >= lefts[right]) { // new_ans ^ s 存在，且在窗口内
+                    ans = new_ans; // 最终答案第 i 位填 1
+                    break;
+                }
+                last[s] = right + 1;
+            }
+        }
+
+        return ans;
+    }
+};
+```
+
+```go [sol-Go]
+func maxXor(nums []int, k int) (ans int) {
+	// 预处理：当窗口右端点在 right 时，窗口左端点在 lefts[right]
+	// 顺带算出前缀异或和、nums 的最大值
+	n := len(nums)
+	lefts := make([]int, n)
+	sum := make([]int, len(nums)+1)
+	mx := 0
+	var minQ, maxQ []int
+	left := 0
+	for right, x := range nums {
+		sum[right+1] = sum[right] ^ x
+		mx = max(mx, x)
+
+		// 1. 入
+		for len(minQ) > 0 && x <= nums[minQ[len(minQ)-1]] {
+			minQ = minQ[:len(minQ)-1]
+		}
+		minQ = append(minQ, right)
+
+		for len(maxQ) > 0 && x >= nums[maxQ[len(maxQ)-1]] {
+			maxQ = maxQ[:len(maxQ)-1]
+		}
+		maxQ = append(maxQ, right)
+
+		// 2. 出
+		for nums[maxQ[0]]-nums[minQ[0]] > k {
+			left++
+			if minQ[0] < left {
+				minQ = minQ[1:]
+			}
+			if maxQ[0] < left {
+				maxQ = maxQ[1:]
+			}
+		}
+
+		// 3. 记录此时的 left
+		lefts[right] = left
+	}
+
+	// 试填法
+	width := bits.Len(uint(mx))
+	last := make([]int, 1<<width)
+	for i := width - 1; i >= 0; i-- {
+		for j := range 1 << (width - i) {
+			last[j] = -1
+		}
+		last[0] = 0 // sum[0] = 0 的位置是 0
+		ans <<= 1
+		newAns := ans | 1
+		for right, l := range lefts {
+			s := sum[right+1] >> i // 去掉低位，只看高位
+			if last[newAns^s] >= l { // newAns^s 存在，且在窗口内
+				ans = newAns // 最终答案第 i 位填 1
+				break
+			}
+			last[s] = right + 1
+		}
+	}
+
+	return
+}
+```
+
+#### 复杂度分析
+
+- 时间复杂度：$\mathcal{O}(n\log U)$，其中 $n$ 是 $\textit{nums}$ 的长度，$U=\max(\textit{nums})$。
+- 空间复杂度：$\mathcal{O}(n)$ 或 $\mathcal{O}(n + U)$，取决于 $\textit{last}$ 是哈希表还是数组。
 
 ## 专题训练
 

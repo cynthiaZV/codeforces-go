@@ -1,5 +1,7 @@
 package main
 
+import "math/bits"
+
 // https://space.bilibili.com/206214
 const width = 15 // nums[i] 二进制长度的最大值
 
@@ -49,7 +51,7 @@ func (t *trie) maxXor(val int) (ans int) {
 	return
 }
 
-func maxXor(nums []int, k int) (ans int) {
+func maxXor1(nums []int, k int) (ans int) {
 	sum := make([]int, len(nums)+1)
 	for i, x := range nums {
 		sum[i+1] = sum[i] ^ x
@@ -87,5 +89,67 @@ func maxXor(nums []int, k int) (ans int) {
 		// 3. 更新答案
 		ans = max(ans, t.maxXor(sum[right+1]))
 	}
+	return
+}
+
+func maxXor(nums []int, k int) (ans int) {
+	// 预处理：当窗口右端点在 right 时，窗口左端点在 lefts[right]
+	// 顺带算出前缀异或和、nums 的最大值
+	n := len(nums)
+	lefts := make([]int, n)
+	sum := make([]int, len(nums)+1)
+	mx := 0
+	var minQ, maxQ []int
+	left := 0
+	for right, x := range nums {
+		sum[right+1] = sum[right] ^ x
+		mx = max(mx, x)
+
+		// 1. 入
+		for len(minQ) > 0 && x <= nums[minQ[len(minQ)-1]] {
+			minQ = minQ[:len(minQ)-1]
+		}
+		minQ = append(minQ, right)
+
+		for len(maxQ) > 0 && x >= nums[maxQ[len(maxQ)-1]] {
+			maxQ = maxQ[:len(maxQ)-1]
+		}
+		maxQ = append(maxQ, right)
+
+		// 2. 出
+		for nums[maxQ[0]]-nums[minQ[0]] > k {
+			left++
+			if minQ[0] < left {
+				minQ = minQ[1:]
+			}
+			if maxQ[0] < left {
+				maxQ = maxQ[1:]
+			}
+		}
+
+		// 3. 记录此时的 left
+		lefts[right] = left
+	}
+
+	// 试填法
+	width := bits.Len(uint(mx))
+	last := make([]int, 1<<width)
+	for i := width - 1; i >= 0; i-- {
+		for j := range 1 << (width - i) {
+			last[j] = -1
+		}
+		last[0] = 0 // sum[0] = 0 的位置是 0
+		ans <<= 1
+		newAns := ans | 1
+		for right, l := range lefts {
+			s := sum[right+1] >> i   // 去掉低位，只看高位
+			if last[newAns^s] >= l { // newAns^s 存在，且在窗口内
+				ans = newAns // 最终答案第 i 位填 1
+				break
+			}
+			last[s] = right + 1
+		}
+	}
+
 	return
 }
