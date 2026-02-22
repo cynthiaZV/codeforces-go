@@ -1,4 +1,4 @@
-题目怎么说，我们就怎么做。
+[本题视频讲解](https://www.bilibili.com/video/BV1HeZfB7EBt/)，欢迎点赞关注~
 
 ```py [sol-Python3]
 class Solution:

@@ -20,7 +20,7 @@ $\textit{dfs}$ 需要 $4$ 个参数 $i,e_2,e_3,e_5$，分别表示当前要考�
 
 **特殊情况**：如果 $k$ 包含大于 $5$ 的质因子，无解，返回 $0$。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+[本题视频讲解](https://www.bilibili.com/video/BV1HeZfB7EBt/?t=22m54s)，欢迎点赞关注~
 
 ## 写法一
 
