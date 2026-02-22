@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // https://space.bilibili.com/206214
 var fac = [10]int{1}
 
@@ -25,4 +27,12 @@ func isDigitorialPermutation(n int) bool {
 
 	// cnt[i] == 0
 	return cnt == [10]int{}
+}
+
+func main() {
+	for i := range 9999999 {
+		if isDigitorialPermutation(i) {
+			fmt.Println(i)
+		}
+	}
 }
