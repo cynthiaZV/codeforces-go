@@ -262,7 +262,7 @@ func countSequences(nums []int, k int64) int {
 
 状态个数：由于 $\textit{nums}[i]\le 6$，分解出的质因子 $2,3,5$ 的个数均为 $\mathcal{O}(1)$，所以至多有 $\mathcal{O}(n)$ 个不同的 $i,e_2,e_3,e_5$，所以有 $\mathcal{O}(n^4)$ 个状态。
 
-- 时间复杂度：$\mathcal{O}(n^4 + \log \textit{target})$，其中 $n$ 是 $\textit{nums}$ 的长度。由于每个状态只会计算一次，动态规划的时间复杂度 $=$ 状态个数 $\times$ 单个状态的计算时间。本题状态个数等于 $\mathcal{O}(n^4)$，单个状态的计算时间为 $\mathcal{O}(1)$，所以总的时间复杂度为 $\mathcal{O}(n^4)$。分解 $\textit{target}$ 需要 $\mathcal{O}(\log \textit{target})$ 的时间。
+- 时间复杂度：$\mathcal{O}(n^4 + \log k)$，其中 $n$ 是 $\textit{nums}$ 的长度。由于每个状态只会计算一次，动态规划的时间复杂度 $=$ 状态个数 $\times$ 单个状态的计算时间。本题状态个数等于 $\mathcal{O}(n^4)$，单个状态的计算时间为 $\mathcal{O}(1)$，所以总的时间复杂度为 $\mathcal{O}(n^4)$。分解 $k$ 需要 $\mathcal{O}(\log k)$ 的时间。
 - 空间复杂度：$\mathcal{O}(n^4)$。保存多少状态，就需要多少空间。
 
 ## 写法二
