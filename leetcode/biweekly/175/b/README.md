@@ -328,7 +328,7 @@ func minimumK(nums []int) int {
 
 #### 复杂度分析
 
-- 时间复杂度：$\mathcal{O}(n\log (n/\sqrt[3] S))$，其中 $n$ 是 $\textit{nums}$ 的长度，$S$ 是 $\textit{nums}$ 的元素和。由于 $\sum\limits_{i=0}^{n-1}\left\lceil\dfrac{\textit{nums}[i]}{k}\right\rceil < \sum\limits_{i=0}^{n-1}\left(\dfrac{\textit{nums}[i]}{k}+1\right) = \dfrac{S}{k} + n$，所以当 $\textit{low} = \sqrt[3] S$ 时，$\textit{high} = \sqrt{\dfrac{S}{\sqrt[3] S} + n} = \sqrt{S^{2/3} + n}$。根据泰勒展开 $\sqrt{x^2+y} - x\approx \dfrac{y}{2x}$，得到 $\textit{high} - \textit{low} \approx \dfrac{n}{2\sqrt[3] S}$。
+- 时间复杂度：$\mathcal{O}\left(n\log \dfrac{n}{\sqrt[3] S}\right)$，其中 $n$ 是 $\textit{nums}$ 的长度，$S$ 是 $\textit{nums}$ 的元素和。由于 $\sum\limits_{i=0}^{n-1}\left\lceil\dfrac{\textit{nums}[i]}{k}\right\rceil < \sum\limits_{i=0}^{n-1}\left(\dfrac{\textit{nums}[i]}{k}+1\right) = \dfrac{S}{k} + n$，所以当 $\textit{low} = \sqrt[3] S$ 时，$\textit{high} = \sqrt{\dfrac{S}{\sqrt[3] S} + n} = \sqrt{S^{2/3} + n}$。根据泰勒展开 $\sqrt{x^2+y} - x\approx \dfrac{y}{2x}$，得到 $\textit{high} - \textit{low} \approx \dfrac{n}{2\sqrt[3] S}$。
 - 空间复杂度：$\mathcal{O}(1)$。
 
 ## 专题训练
