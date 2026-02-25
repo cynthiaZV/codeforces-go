@@ -14,7 +14,6 @@ func cf2154D(in io.Reader, _w io.Writer) {
 	for Fscan(in, &T); T > 0; T-- {
 		Fscan(in, &n)
 		g := make([][]int, n)
-		deg := make([]int, n)
 		for range n - 1 {
 			var v, w int
 			Fscan(in, &v, &w)
@@ -22,35 +21,22 @@ func cf2154D(in io.Reader, _w io.Writer) {
 			w--
 			g[v] = append(g[v], w)
 			g[w] = append(g[w], v)
-			deg[v]++
-			deg[w]++
 		}
 
 		dep := make([]int8, n)
-		var dfs func(int, int)
-		dfs = func(v, fa int) {
-			for _, w := range g[v] {
-				if w != fa {
-					dep[w] = dep[v] ^ 1
-					dfs(w, v)
-				}
-			}
+		for i := range dep {
+			dep[i] = -1
 		}
-		dfs(n-1, -1)
-
-		q := make([]int, 0, n-1)
+		dep[n-1] = 0
+		q := make([]int, 1, n)
+		q[0] = n - 1
 		orders := q
-		for i, d := range deg[:n-1] {
-			if d == 1 {
-				q = append(q, i)
-			}
-		}
 		for len(q) > 0 {
 			v := q[0]
 			q = q[1:]
 			for _, w := range g[v] {
-				deg[w]--
-				if w < n-1 && deg[w] == 1 {
+				if dep[w] < 0 {
+					dep[w] = dep[v] ^ 1
 					q = append(q, w)
 				}
 			}
@@ -58,7 +44,9 @@ func cf2154D(in io.Reader, _w io.Writer) {
 
 		ans := []int{}
 		cur := dep[0]
-		for _, v := range orders[:n-1] {
+		orders = orders[1:n]
+		for i := len(orders) - 1; i >= 0; i-- {
+			v := orders[i]
 			if dep[v] == cur {
 				ans = append(ans, 0)
 				cur ^= 1
