@@ -38,7 +38,7 @@ func cf2154D(in io.Reader, _w io.Writer) {
 		}
 		dfs(n-1, -1)
 
-		q := make([]int, 0, n)
+		q := make([]int, 0, n-1)
 		orders := q
 		for i, d := range deg[:n-1] {
 			if d == 1 {
@@ -50,7 +50,7 @@ func cf2154D(in io.Reader, _w io.Writer) {
 			q = q[1:]
 			for _, w := range g[v] {
 				deg[w]--
-				if deg[w] == 1 {
+				if w < n-1 && deg[w] == 1 {
 					q = append(q, w)
 				}
 			}
@@ -61,8 +61,10 @@ func cf2154D(in io.Reader, _w io.Writer) {
 		for _, v := range orders[:n-1] {
 			if dep[v] == cur {
 				ans = append(ans, 0)
+				cur ^= 1
 			}
 			ans = append(ans, v+1, 0)
+			cur ^= 1
 		}
 
 		Fprintln(out, len(ans))
