@@ -6,22 +6,26 @@ import (
 )
 
 // github.com/EndlessCheng/codeforces-go
-func findDifferentBinaryString(nums []string) string {
-	has := map[int]bool{}
+func findDifferentBinaryString1(nums []string) string {
+	n := len(nums)
+	has := make(map[int]bool, n)
 	for _, s := range nums {
-		v, _ := strconv.ParseInt(s, 2, 64)
-		has[int(v)] = true
+		x, _ := strconv.ParseInt(s, 2, 64)
+		has[int(x)] = true
 	}
-	v := 0
-	for ; has[v]; v++ {
+
+	ans := 0
+	for has[ans] {
+		ans++
 	}
-	return fmt.Sprintf("%0*b", len(nums[0]), v)
+
+	return fmt.Sprintf("%0*b", n, ans)
 }
 
-// 康托对角线
-func findDifferentBinaryString2(nums []string) (ans string) {
+func findDifferentBinaryString(nums []string) string {
+	ans := make([]byte, len(nums))
 	for i, s := range nums {
-		ans += string(s[i] ^ 1)
+		ans[i] = s[i] ^ 1
 	}
-	return
+	return string(ans)
 }
