@@ -465,7 +465,9 @@ func gcd(a, b int) int {
 }
 ```
 
-**注**：本题也可以用折半搜索做，时间复杂度 $\mathcal{O}(3^{n/2})$。
+**注 1**：为什么不写 $\gcd$ 也可以通过？时间复杂度是多少？极端数据是 $\dfrac{n}{3}$ 个 $2,3,5$。对于 $2$ 来说，假设有 $x$ 个 $2$ 放在分子上，有 $y$ 个 $2$ 放在分母上，有 $z$ 个 $2$ 没有选，那么有 $x+y+z = \dfrac{n}{3}$。根据 [图解：多重集组合数](https://leetcode.cn/problems/count-ways-to-make-array-with-product/solutions/2713481/tu-jie-zhi-yin-zi-fen-jie-fang-qiu-wen-t-fboo/)，这个不定方程的非负整数解的个数，等价于把 $\dfrac{n}{3}$ 个相同小球放入 $3$ 个不同的盒子，允许空盒的方案数，即 $C(n/3 + 2,2)$，可以粗略地认为是 $\dfrac{n^2}{18}$。那么 $\dfrac{n}{3}$ 个 $2,3,5$ 可以得到 $\left(\dfrac{n^2}{18}\right)^3 = \dfrac{n^6}{5832}$ 个不同的未约分的分数，再算上 $\mathcal{O}(n)$ 个参数 $i$，可以得到状态个数为 $\mathcal{O}(n^7)$（这也是时间复杂度），但由于常数非常小，足以让 $\mathcal{O}(n^7)$ 的算法通过。
+
+**注 2**：也可以用折半搜索做，时间复杂度是 $\mathcal{O}(3^{n/2})$。
 
 见下面回溯题单的「**§4.8 折半搜索**」。
 
