@@ -12,7 +12,6 @@ func concatenatedBinary1(n int) (ans int) {
 	return
 }
 
-// github.com/EndlessCheng/codeforces-go
 const mod = 1_000_000_007
 
 func pow(x, n int) int {
