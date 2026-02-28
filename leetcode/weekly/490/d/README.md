@@ -1,8 +1,400 @@
-在每个下标 $i$ 处，我们有 $3$ 种操作，所以一共有 $3^n\le 3^{19} = 1162261467$ 个不同的操作组合，这太大了，直接暴力搜索会超时。
+在每个下标 $i$ 处，我们有 $3$ 种操作，所以一共有 $3^n\le 3^{19} = 1162261467$ 个不同的操作组合。但这里面有很多重复的搜索。比如 $\textit{nums} = [2,2,\ldots]$，乘以第一个 $2$，除以第二个 $2$，或者除以第一个 $2$，乘以第二个 $2$，或者两个 $2$ 都不选，都会得到 $\textit{val} = 1$。
 
-注意本题 $\textit{nums}[i]\le 6$，如果对 $\textit{nums}[i]$ 做质因数分解，分解出的 $2,3,5$ 的个数均为 $\mathcal{O}(1)$，所以计算乘除后，最终结果的质因数分解中的 $2,3,5$ 的幂次是 $\mathcal{O}(n)$ 的。所以这 $3^n$ 个不同的操作，只会得到 $\mathcal{O}(n^3)$ 个不同的 $\textit{val}$。本题涉及到分数，这里把分母的质因子的幂次视作负数，例如 $\dfrac{1}{8} = 2^{-3}$，$\dfrac{25}{6} = 2^{-1}3^{-1}5^2$。
+所以可以用**记忆化搜索**优化。原理请看视频讲解 [动态规划入门：从记忆化搜索到递推【基础算法精讲 17】](https://www.bilibili.com/video/BV1Xj411K7oF/)。
 
-考虑记忆化搜索。我们从 $k$ 和 $n-1$ 开始，倒着乘除，目标是得到 $1$，即质因数分解中的 $2,3,5$ 的幂次均为 $0$。
+用分数 $\dfrac{p}{q}$ 表示 $\textit{val}$。从初始值 $p = q = 1$ 开始，目标是 $\dfrac{p}{q} = k$。
+
+```py [sol-Python3]
+class Solution:
+    def countSequences(self, nums: List[int], k: int) -> int:
+        @cache
+        def dfs(i: int, p: int, q: int) -> int:
+            if i < 0:
+                # p / q == k 等价于 p == q * k
+                return 1 if p == q * k else 0
+
+            res1 = dfs(i - 1, p * nums[i], q)  # 乘以 nums[i]
+            res2 = dfs(i - 1, p, q * nums[i])  # 除以 nums[i]
+            res3 = dfs(i - 1, p, q)  # 不变
+            return res1 + res2 + res3
+
+        return dfs(len(nums) - 1, 1, 1)  # 从 1/1 开始，目标是变成 k/1
+```
+
+```java [sol-Java]
+class Solution {
+    private record Args(int i, long p, long q) {
+    }
+
+    public int countSequences(int[] nums, long k) {
+        Map<Args, Integer> memo = new HashMap<>();
+        return dfs(nums.length - 1, 1, 1, nums, k, memo); // 从 1/1 开始，目标是变成 k/1
+    }
+
+    private int dfs(int i, long p, long q, int[] nums, long k, Map<Args, Integer> memo) {
+        if (i < 0) {
+            // 不能直接写 p == q * k，乘法会溢出
+            return p % q == 0 && p / q == k ? 1 : 0;
+        }
+
+        Args t = new Args(i, p, q);
+        Integer cachedRes = memo.get(t);
+        if (cachedRes != null) {
+            return cachedRes;
+        }
+
+        int res1 = dfs(i - 1, p * nums[i], q, nums, k, memo); // 乘以 nums[i]
+        int res2 = dfs(i - 1, p, q * nums[i], nums, k, memo); // 除以 nums[i]
+        int res3 = dfs(i - 1, p, q, nums, k, memo); // 不变
+        int res = res1 + res2 + res3;
+
+        memo.put(t, res);
+        return res;
+    }
+}
+```
+
+```cpp [sol-C++]
+class Solution {
+public:
+    int countSequences(vector<int>& nums, long long k) {
+        // 用 unordered_map 的写法见另一份代码【C++ 自定义哈希】
+        map<tuple<int, long long, long long>, int> memo;
+
+        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
+            if (i < 0) {
+                // 不能直接写 p == q * k，乘法会溢出
+                return p % q == 0 && p / q == k;
+            }
+
+            auto t = tuple(i, p, q);
+            auto it = memo.find(t);
+            if (it != memo.end()) {
+                return it->second;
+            }
+
+            int res1 = dfs(i - 1, p * nums[i], q); // 乘以 nums[i]
+            int res2 = dfs(i - 1, p, q * nums[i]); // 除以 nums[i]
+            int res3 = dfs(i - 1, p, q); // 不变
+            int res = res1 + res2 + res3;
+
+            memo[t] = res;
+            return res;
+        };
+
+        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
+    }
+};
+```
+
+```cpp [sol-C++ 自定义哈希]
+struct TupleHash {
+    template<typename T>
+    static void hash_combine(size_t& seed, const T& v) {
+        // 参考 boost::hash_combine
+        seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    template<typename Tuple, size_t Index = 0>
+    static void hash_tuple(size_t& seed, const Tuple& t) {
+        if constexpr (Index < tuple_size_v<Tuple>) {
+            hash_combine(seed, get<Index>(t));
+            hash_tuple<Tuple, Index + 1>(seed, t);
+        }
+    }
+
+    template<typename... Ts>
+    size_t operator()(const tuple<Ts...>& t) const {
+        size_t seed = 0;
+        hash_tuple(seed, t);
+        return seed;
+    }
+};
+
+class Solution {
+public:
+    int countSequences(vector<int>& nums, long long k) {
+        unordered_map<tuple<int, long long, long long>, int, TupleHash> memo;
+
+        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
+            if (i < 0) {
+                // 不能直接写 p == q * k，乘法会溢出
+                return p % q == 0 && p / q == k;
+            }
+
+            auto t = tuple(i, p, q);
+            auto it = memo.find(t);
+            if (it != memo.end()) {
+                return it->second;
+            }
+
+            int res1 = dfs(i - 1, p * nums[i], q); // 乘以 nums[i]
+            int res2 = dfs(i - 1, p, q * nums[i]); // 除以 nums[i]
+            int res3 = dfs(i - 1, p, q); // 不变
+            int res = res1 + res2 + res3;
+
+            memo[t] = res;
+            return res;
+        };
+
+        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
+    }
+};
+```
+
+```go [sol-Go]
+func countSequences(nums []int, k int64) int {
+	type args struct{ i, p, q int }
+	memo := map[args]int{}
+
+	var dfs func(int, int, int) int
+	dfs = func(i, p, q int) int {
+		if i < 0 {
+			// 不能直接写 p == q * k，乘法会溢出
+			if p%q == 0 && p/q == int(k) {
+				return 1
+			}
+			return 0
+		}
+
+		t := args{i, p, q}
+		if res, ok := memo[t]; ok {
+			return res
+		}
+
+		res1 := dfs(i-1, p*nums[i], q) // 乘以 nums[i]
+		res2 := dfs(i-1, p, q*nums[i]) // 除以 nums[i]
+		res3 := dfs(i-1, p, q)         // 不变
+		res := res1 + res2 + res3
+
+		memo[t] = res
+		return res
+	}
+
+	return dfs(len(nums)-1, 1, 1) // 从 1/1 开始，目标是变成 k/1
+}
+```
+
+#### 复杂度分析
+
+状态个数：注意本题 $\textit{nums}[i]\le 6$，只包含质因子 $2,3,5$。考虑这样的极端情况：$\textit{nums}$ 包含 $\dfrac{n}{3}$ 个 $2,3,5$。对于 $2$ 来说，假设有 $x$ 个 $2$ 放在分子上，有 $y$ 个 $2$ 放在分母上，有 $z$ 个 $2$ 没有选，那么有 $x+y+z = \dfrac{n}{3}$。根据 [图解：多重集组合数](https://leetcode.cn/problems/count-ways-to-make-array-with-product/solutions/2713481/tu-jie-zhi-yin-zi-fen-jie-fang-qiu-wen-t-fboo/)，这个不定方程的非负整数解 $(x,y,z)$ 的个数，等价于把 $\dfrac{n}{3}$ 个相同小球放入 $3$ 个不同的盒子，允许空盒的方案数，即 $C(n/3 + 2,2)$，可以粗略地认为是 $\dfrac{n^2}{18}$。那么 $\dfrac{n}{3}$ 个 $2,3,5$ 约可以得到 $\left(\dfrac{n^2}{18}\right)^3 = \dfrac{n^6}{5832}$ 个不同的**未约分**的分数。再算上 $\mathcal{O}(n)$ 个参数 $i$，可得状态个数为 $\mathcal{O}(n^7)$。由于常数非常小，足以让 $\mathcal{O}(n^7)$ 的算法通过。
+
+- 时间复杂度：$\mathcal{O}(n^7)$，其中 $n$ 是 $\textit{nums}$ 的长度。由于每个状态只会计算一次，动态规划的时间复杂度 $=$ 状态个数 $\times$ 单个状态的计算时间。本题状态个数等于 $\mathcal{O}(n^7)$，单个状态的计算时间为 $\mathcal{O}(1)$，所以总的时间复杂度为 $\mathcal{O}(n^7)$。
+- 空间复杂度：$\mathcal{O}(n^7)$。保存多少状态，就需要多少空间。
+
+## 约分
+
+用**最简分数** $\dfrac{p}{q}$ 表示 $\textit{val}$。在算完乘除后，如果 $p$ 和 $q$ 不互质，要约分，把 $p$ 和 $q$ 都除以 $\gcd(p,q)$，从而让 $p$ 和 $q$ 互质。
+
+```py [sol-Python3]
+class Solution:
+    def countSequences(self, nums: List[int], k: int) -> int:
+        @cache
+        def dfs(i: int, p: int, q: int) -> int:
+            if i < 0:
+                return 1 if p == k and q == 1 else 0
+
+            x = nums[i]
+            g = gcd(p * x, q)
+            res1 = dfs(i - 1, p * x // g, q // g)  # 乘以 nums[i]
+            g = gcd(p, q * x)
+            res2 = dfs(i - 1, p // g, q * x // g)  # 除以 nums[i]
+            res3 = dfs(i - 1, p, q)  # 不变
+            return res1 + res2 + res3
+
+        return dfs(len(nums) - 1, 1, 1)  # 从 1/1 开始，目标是变成 k/1
+```
+
+```java [sol-Java]
+class Solution {
+    private record Args(int i, long p, long q) {
+    }
+
+    public int countSequences(int[] nums, long k) {
+        Map<Args, Integer> memo = new HashMap<>();
+        return dfs(nums.length - 1, 1, 1, nums, k, memo); // 从 1/1 开始，目标是变成 k/1
+    }
+
+    private int dfs(int i, long p, long q, int[] nums, long k, Map<Args, Integer> memo) {
+        if (i < 0) {
+            return p == k && q == 1 ? 1 : 0;
+        }
+
+        Args t = new Args(i, p, q);
+        Integer cachedRes = memo.get(t);
+        if (cachedRes != null) {
+            return cachedRes;
+        }
+
+        int x = nums[i];
+        long g = gcd(p * x, q);
+        int res1 = dfs(i - 1, p * x / g, q / g, nums, k, memo); // 乘以 nums[i]
+        g = gcd(p, q * x);
+        int res2 = dfs(i - 1, p / g, q * x / g, nums, k, memo); // 除以 nums[i]
+        int res3 = dfs(i - 1, p, q, nums, k, memo); // 不变
+        int res = res1 + res2 + res3;
+
+        memo.put(t, res);
+        return res;
+    }
+
+    private long gcd(long a, long b) {
+        while (a != 0) {
+            long tmp = a;
+            a = b % a;
+            b = tmp;
+        }
+        return b;
+    }
+}
+```
+
+```cpp [sol-C++]
+class Solution {
+public:
+    int countSequences(vector<int>& nums, long long k) {
+        // 用 unordered_map 的写法见另一份代码【C++ 自定义哈希】
+        map<tuple<int, long long, long long>, int> memo;
+
+        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
+            if (i < 0) {
+                return p == k && q == 1;
+            }
+
+            auto t = tuple(i, p, q);
+            auto it = memo.find(t);
+            if (it != memo.end()) {
+                return it->second;
+            }
+
+            int x = nums[i];
+            long long g = gcd(p * x, q);
+            int res1 = dfs(i - 1, p * x / g, q / g); // 乘以 nums[i]
+            g = gcd(p, q * x);
+            int res2 = dfs(i - 1, p / g, q * x / g); // 除以 nums[i]
+            int res3 = dfs(i - 1, p, q); // 不变
+            int res = res1 + res2 + res3;
+
+            memo[t] = res;
+            return res;
+        };
+
+        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
+    }
+};
+```
+
+```cpp [sol-C++ 自定义哈希]
+struct TupleHash {
+    template<typename T>
+    static void hash_combine(size_t& seed, const T& v) {
+        // 参考 boost::hash_combine
+        seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    template<typename Tuple, size_t Index = 0>
+    static void hash_tuple(size_t& seed, const Tuple& t) {
+        if constexpr (Index < tuple_size_v<Tuple>) {
+            hash_combine(seed, get<Index>(t));
+            hash_tuple<Tuple, Index + 1>(seed, t);
+        }
+    }
+
+    template<typename... Ts>
+    size_t operator()(const tuple<Ts...>& t) const {
+        size_t seed = 0;
+        hash_tuple(seed, t);
+        return seed;
+    }
+};
+
+class Solution {
+public:
+    int countSequences(vector<int>& nums, long long k) {
+        unordered_map<tuple<int, long long, long long>, int, TupleHash> memo;
+
+        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
+            if (i < 0) {
+                return p == k && q == 1;
+            }
+
+            auto t = tuple(i, p, q);
+            auto it = memo.find(t);
+            if (it != memo.end()) {
+                return it->second;
+            }
+
+            int x = nums[i];
+            long long g = gcd(p * x, q);
+            int res1 = dfs(i - 1, p * x / g, q / g); // 乘以 nums[i]
+            g = gcd(p, q * x);
+            int res2 = dfs(i - 1, p / g, q * x / g); // 除以 nums[i]
+            int res3 = dfs(i - 1, p, q); // 不变
+            int res = res1 + res2 + res3;
+
+            memo[t] = res;
+            return res;
+        };
+
+        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
+    }
+};
+```
+
+```go [sol-Go]
+func countSequences(nums []int, k int64) int {
+	type args struct{ i, p, q int }
+	memo := map[args]int{}
+
+	var dfs func(int, int, int) int
+	dfs = func(i, p, q int) int {
+		if i < 0 {
+			if p == int(k) && q == 1 {
+				return 1
+			}
+			return 0
+		}
+
+		t := args{i, p, q}
+		if res, ok := memo[t]; ok {
+			return res
+		}
+
+		x := nums[i]
+		g := gcd(p*x, q)
+		res2 := dfs(i-1, p*x/g, q/g) // 乘以 nums[i]
+		g = gcd(p, q*x)
+		res1 := dfs(i-1, p/g, q*x/g) // 除以 nums[i]
+		res3 := dfs(i-1, p, q)       // k 不变
+		res := res1 + res2 + res3
+
+		memo[t] = res
+		return res
+	}
+
+	return dfs(len(nums)-1, 1, 1) // 从 1/1 开始，目标是变成 k/1
+}
+
+func gcd(a, b int) int {
+	for a != 0 {
+		a, b = b%a, a
+	}
+	return b
+}
+```
+
+#### 复杂度分析
+
+状态个数：见后文「质因数分解优化」。
+
+- 时间复杂度：$\mathcal{O}(n^5\log U)$，其中 $n$ 是 $\textit{nums}$ 的长度，$U=\max(\textit{nums})\le 6$。由于每个状态只会计算一次，动态规划的时间复杂度 $=$ 状态个数 $\times$ 单个状态的计算时间。本题状态个数等于 $\mathcal{O}(n^4)$，单个状态的计算时间瓶颈在计算 $\gcd$ 上，复杂度为 $\mathcal{O}(\log(U^n)) = \mathcal{O}(n\log U)$，所以总的时间复杂度为 $\mathcal{O}(n^5\log U)$。
+- 空间复杂度：$\mathcal{O}(n^4)$。保存多少状态，就需要多少空间。
+
+## 质因数分解优化
+
+如果对 $\textit{nums}[i]$ 做质因数分解，分解出的 $2,3,5$ 的个数均为 $\mathcal{O}(1)$，所以计算乘除后，最终结果的质因数分解中的 $2,3,5$ 的幂次是 $\mathcal{O}(n)$ 的。所以这 $3^n$ 个不同的操作，只会得到 $\mathcal{O}(n^3)$ 个不同的 $\textit{val}$。本题涉及到分数，这里把分母的质因子的幂次视作负数，例如 $\dfrac{1}{8} = 2^{-3}$，$\dfrac{25}{6} = 2^{-1}3^{-1}5^2$。
+
+考虑记忆化搜索，从 $k$ 和 $n-1$ 开始，倒着乘除，目标是得到 $1$，即质因数分解中的 $2,3,5$ 的幂次均为 $0$。
 
 $\textit{dfs}$ 需要 $4$ 个参数 $i,e_2,e_3,e_5$，分别表示当前要考虑下标 $i$ 怎么操作，以及当前 $k$ 的质因数分解中的 $2,3,5$ 的幂次。
 
@@ -21,8 +413,6 @@ $\textit{dfs}$ 需要 $4$ 个参数 $i,e_2,e_3,e_5$，分别表示当前要考�
 **特殊情况**：如果 $k$ 包含大于 $5$ 的质因子，无解，返回 $0$。
 
 [本题视频讲解](https://www.bilibili.com/video/BV1HeZfB7EBt/?t=22m54s)，欢迎点赞关注~
-
-## 写法一
 
 ```py [sol-Python3]
 class Solution:
@@ -232,6 +622,7 @@ func countSequences(nums []int, k int64) int {
 
 	type args struct{ i, e2, e3, e5 int }
 	memo := map[args]int{}
+
 	var dfs func(int, int, int, int) int
 	dfs = func(i, e2, e3, e5 int) int {
 		if i < 0 {
@@ -254,220 +645,19 @@ func countSequences(nums []int, k int64) int {
 		memo[p] = res
 		return res
 	}
+
 	return dfs(n-1, e[0], e[1], e[2]) // 从 k 开始，目标是变成 1
 }
 ```
 
 #### 复杂度分析
 
-状态个数：由于 $\textit{nums}[i]\le 6$，分解出的质因子 $2,3,5$ 的个数均为 $\mathcal{O}(1)$，所以至多有 $\mathcal{O}(n)$ 个不同的 $i,e_2,e_3,e_5$，所以有 $\mathcal{O}(n^4)$ 个状态。
+状态个数：由于 $\textit{nums}[i]\le 6$，$\textit{nums}[i]$ 分解出的质因子 $2,3,5$ 的个数均为 $\mathcal{O}(1)$，所以参数 $i,e_2,e_3,e_5$ 都分别有 $\mathcal{O}(n)$ 个不同的值，一共有 $\mathcal{O}(n^4)$ 个状态。
 
 - 时间复杂度：$\mathcal{O}(n^4 + \log k)$，其中 $n$ 是 $\textit{nums}$ 的长度。由于每个状态只会计算一次，动态规划的时间复杂度 $=$ 状态个数 $\times$ 单个状态的计算时间。本题状态个数等于 $\mathcal{O}(n^4)$，单个状态的计算时间为 $\mathcal{O}(1)$，所以总的时间复杂度为 $\mathcal{O}(n^4)$。分解 $k$ 需要 $\mathcal{O}(\log k)$ 的时间。
 - 空间复杂度：$\mathcal{O}(n^4)$。保存多少状态，就需要多少空间。
 
-## 写法二
-
-也可以用**最简分数** $\dfrac{p}{q}$ 表示 $\textit{val}$。从 $\dfrac{1}{1}$ 开始，通过若干操作，得到 $\dfrac{k}{1}$。
-
-这种写法更简单，缺点是需要在 $\textit{dfs}$ 的过程中计算 $\gcd$，效率不如预处理质因数分解的做法。
-
-```py [sol-Python3]
-class Solution:
-    def countSequences(self, nums: List[int], k: int) -> int:
-        @cache
-        def dfs(i: int, p: int, q: int) -> int:
-            if i < 0:
-                return 1 if p == k and q == 1 else 0
-
-            x = nums[i]
-            g = gcd(p, q * x)
-            res1 = dfs(i - 1, p // g, q * x // g)  # 除以 nums[i]
-            g = gcd(p * x, q)
-            res2 = dfs(i - 1, p * x // g, q // g)  # 乘以 nums[i]
-            res3 = dfs(i - 1, p, q)  # 不变
-            return res1 + res2 + res3
-
-        return dfs(len(nums) - 1, 1, 1)  # 从 1/1 开始，目标是变成 k/1
-```
-
-```java [sol-Java]
-class Solution {
-    private record Args(int i, long p, long q) {
-    }
-
-    public int countSequences(int[] nums, long k) {
-        Map<Args, Integer> memo = new HashMap<>();
-        return dfs(nums.length - 1, 1, 1, nums, k, memo); // 从 1/1 开始，目标是变成 k/1
-    }
-
-    private int dfs(int i, long p, long q, int[] nums, long k, Map<Args, Integer> memo) {
-        if (i < 0) {
-            return p == k && q == 1 ? 1 : 0;
-        }
-
-        Args t = new Args(i, p, q);
-        Integer cachedRes = memo.get(t);
-        if (cachedRes != null) {
-            return cachedRes;
-        }
-
-        int x = nums[i];
-        long g = gcd(p, q * x);
-        int res1 = dfs(i - 1, p / g, q * x / g, nums, k, memo); // 除以 nums[i]
-        g = gcd(p * x, q);
-        int res2 = dfs(i - 1, p * x / g, q / g, nums, k, memo); // 乘以 nums[i]
-        int res3 = dfs(i - 1, p, q, nums, k, memo); // 不变
-        int res = res1 + res2 + res3;
-
-        memo.put(t, res);
-        return res;
-    }
-
-    private long gcd(long a, long b) {
-        while (a != 0) {
-            long tmp = a;
-            a = b % a;
-            b = tmp;
-        }
-        return b;
-    }
-}
-```
-
-```cpp [sol-C++]
-class Solution {
-public:
-    int countSequences(vector<int>& nums, long long k) {
-        // 用 unordered_map 的写法见另一份代码【C++ 自定义哈希】
-        map<tuple<int, long long, long long>, int> memo;
-
-        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
-            if (i < 0) {
-                return p == k && q == 1;
-            }
-
-            auto t = tuple(i, p, q);
-            auto it = memo.find(t);
-            if (it != memo.end()) {
-                return it->second;
-            }
-
-            int x = nums[i];
-            long long g = gcd(p, q * x);
-            int res1 = dfs(i - 1, p / g, q * x / g); // 除以 nums[i]
-            g = gcd(p * x, q);
-            int res2 = dfs(i - 1, p * x / g, q / g); // 乘以 nums[i]
-            int res3 = dfs(i - 1, p, q); // 不变
-            int res = res1 + res2 + res3;
-
-            memo[t] = res;
-            return res;
-        };
-
-        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
-    }
-};
-```
-
-```cpp [sol-C++ 自定义哈希]
-struct TupleHash {
-    template<typename T>
-    static void hash_combine(size_t& seed, const T& v) {
-        // 参考 boost::hash_combine
-        seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-
-    template<typename Tuple, size_t Index = 0>
-    static void hash_tuple(size_t& seed, const Tuple& t) {
-        if constexpr (Index < tuple_size_v<Tuple>) {
-            hash_combine(seed, get<Index>(t));
-            hash_tuple<Tuple, Index + 1>(seed, t);
-        }
-    }
-
-    template<typename... Ts>
-    size_t operator()(const tuple<Ts...>& t) const {
-        size_t seed = 0;
-        hash_tuple(seed, t);
-        return seed;
-    }
-};
-
-class Solution {
-public:
-    int countSequences(vector<int>& nums, long long k) {
-        unordered_map<tuple<int, long long, long long>, int, TupleHash> memo;
-
-        auto dfs = [&](this auto&& dfs, int i, long long p, long long q) -> int {
-            if (i < 0) {
-                return p == k && q == 1;
-            }
-
-            auto t = tuple(i, p, q);
-            auto it = memo.find(t);
-            if (it != memo.end()) {
-                return it->second;
-            }
-
-            int x = nums[i];
-            long long g = gcd(p, q * x);
-            int res1 = dfs(i - 1, p / g, q * x / g); // 除以 nums[i]
-            g = gcd(p * x, q);
-            int res2 = dfs(i - 1, p * x / g, q / g); // 乘以 nums[i]
-            int res3 = dfs(i - 1, p, q); // 不变
-            int res = res1 + res2 + res3;
-
-            memo[t] = res;
-            return res;
-        };
-
-        return dfs(nums.size() - 1, 1, 1); // 从 1/1 开始，目标是变成 k/1
-    }
-};
-```
-
-```go [sol-Go]
-func countSequences(nums []int, k int64) int {
-	type args struct{ i, p, q int }
-	memo := map[args]int{}
-	var dfs func(int, int, int) int
-	dfs = func(i, p, q int) int {
-		if i < 0 {
-			if p == int(k) && q == 1 {
-				return 1
-			}
-			return 0
-		}
-		t := args{i, p, q}
-		if res, ok := memo[t]; ok {
-			return res
-		}
-
-		x := nums[i]
-		g := gcd(p, q*x)
-		res1 := dfs(i-1, p/g, q*x/g) // 除以 nums[i]
-		g = gcd(p*x, q)
-		res2 := dfs(i-1, p*x/g, q/g) // 乘以 nums[i]
-		res3 := dfs(i-1, p, q)       // 不变
-		res := res1 + res2 + res3
-
-		memo[t] = res
-		return res
-	}
-	return dfs(len(nums)-1, 1, 1) // 从 1/1 开始，目标是变成 k/1
-}
-
-func gcd(a, b int) int {
-	for a != 0 {
-		a, b = b%a, a
-	}
-	return b
-}
-```
-
-**注 1**：为什么不写 $\gcd$ 也可以通过？时间复杂度是多少？极端数据是 $\dfrac{n}{3}$ 个 $2,3,5$。对于 $2$ 来说，假设有 $x$ 个 $2$ 放在分子上，有 $y$ 个 $2$ 放在分母上，有 $z$ 个 $2$ 没有选，那么有 $x+y+z = \dfrac{n}{3}$。根据 [图解：多重集组合数](https://leetcode.cn/problems/count-ways-to-make-array-with-product/solutions/2713481/tu-jie-zhi-yin-zi-fen-jie-fang-qiu-wen-t-fboo/)，这个不定方程的非负整数解的个数，等价于把 $\dfrac{n}{3}$ 个相同小球放入 $3$ 个不同的盒子，允许空盒的方案数，即 $C(n/3 + 2,2)$，可以粗略地认为是 $\dfrac{n^2}{18}$。那么 $\dfrac{n}{3}$ 个 $2,3,5$ 可以得到 $\left(\dfrac{n^2}{18}\right)^3 = \dfrac{n^6}{5832}$ 个不同的未约分的分数，再算上 $\mathcal{O}(n)$ 个参数 $i$，可以得到状态个数为 $\mathcal{O}(n^7)$（这也是时间复杂度），但由于常数非常小，足以让 $\mathcal{O}(n^7)$ 的算法通过。
-
-**注 2**：也可以用折半搜索做，时间复杂度是 $\mathcal{O}(3^{n/2})$。
+**注**：也可以用折半搜索解决，时间复杂度是 $\mathcal{O}(3^{n/2})$。
 
 见下面回溯题单的「**§4.8 折半搜索**」。
 
