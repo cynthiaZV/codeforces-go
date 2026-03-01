@@ -1,12 +1,12 @@
 如果 $\textit{nums}$ 每个数的出现次数都一样，那么无解。
 
-否则有解。题目要求 $x$ 尽量小，把 $\min(\textit{nums})$ 作为 $x$ 即可。
+如果有两个出现次数不同的元素，那么直接把 $\min(\textit{nums})$ 作为 $x$，即可满足题目要求。由于 $x$ 是最小值，另一个出现次数不同的数必然大于 $x$，题目的第一个要求 $x<y$ 自动成立。
 
 对于 $y$，选择 $\textit{nums}$ 中的出现次数不等于 $x$ 的出现次数的最小元素。
 
 统计元素出现次数可以用哈希表（或者数组）。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+[本题视频讲解](https://www.bilibili.com/video/BV1VvABz9EGz/)，欢迎点赞关注~
 
 ```py [sol-Python3]
 class Solution:

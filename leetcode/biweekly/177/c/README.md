@@ -15,14 +15,16 @@
 
 设全局最小值 $\textit{gMin} = \min(\textit{nums})$，全局最大值 $\textit{gMax} = \max(\textit{nums})$。分类讨论：
 
-- 如果 $n=1$，无需修改，返回 $[0,0]$ 即可。下面讨论 $n\ge 2$ 的情况，对于这样的奇偶交替数组，由于相邻元素一定不同，所以极差至少是 $1$。
+- 如果 $n=1$，无需修改，返回 $[0,0]$ 即可。下面讨论 $n\ge 2$ 的情况，对于奇偶交替数组，由于相邻元素一定不同，所以极差至少是 $1$。
 - 如果 $\textit{gMin} = \textit{gMax}$，规定对于要修改的数，统一加一。在修改了元素的情况下，最终极差是 $1$。如果不这样做，某些数加一，另一些数减一，那么极差会是 $2$。
 - 如果 $\textit{gMin} + 1 = \textit{gMax}$，对于要修改的数，如果其等于 $\textit{gMin}$，那么加一；否则其等于 $\textit{gMax}$，那么减一。这样最终极差是 $1$。
 - 如果 $\textit{gMin} + 1 < \textit{gMax}$，对于要修改的数，如果其等于 $\textit{gMin}$，那么加一；如果其等于 $\textit{gMax}$，那么减一；其余数呢？由于修改 $\textit{gMin}$ 和 $\textit{gMax}$ 后极差仍然 $\ge 1$（注意 $n\ge 2$ 的奇偶交替数组的极差至少是 $1$），所以原来在 $[\textit{gMin} + 1, \textit{gMax}-1]$ 中的数，总是可以改成在新的最小值和最大值之间的数，从而**不影响极差**。比如新的最小值是 $\textit{gMin} + 1$，那么新的最大值至少是 $\textit{gMin} + 2$，原来等于 $\textit{gMin} + 1$ 的数可以加一，不会影响极差。
 
 综上所述，对于要修改的数，如果其等于 $\textit{gMin}$，那么加一；否则如果其等于 $\textit{gMax}$，那么减一；其他情况不修改。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+[本题视频讲解](https://www.bilibili.com/video/BV1VvABz9EGz/?t=12m13s)，欢迎点赞关注~
+
+如何构造一个具体的操作方案？见视频讲解。
 
 ```py [sol-Python3]
 class Solution:
@@ -37,6 +39,7 @@ class Solution:
             op = 0
             mn, mx = inf, -inf
             for i, x in enumerate(nums):
+                # 如果 target = 0，那么操作后，nums 每个数的奇偶性必须分别等于 0,1,0,1,... 即 target ^ (i%2)
                 if (x - i) & 1 != target:  # 等价于 x&1 != target ^ (i%2)
                     op += 1
                     if x == g_min:
@@ -81,6 +84,7 @@ class Solution {
         int mx = Integer.MIN_VALUE;
         for (int i = 0; i < nums.length; i++) {
             int x = nums[i];
+            // 如果 target = 0，那么操作后，nums 每个数的奇偶性必须分别等于 0,1,0,1,... 即 target ^ (i%2)
             if (((x - i) & 1) != target) { // 等价于 (x&1) != (target ^ (i%2))
                 op++;
                 if (x == gMin) {
@@ -113,6 +117,7 @@ public:
             int mn = INT_MAX, mx = INT_MIN;
             for (int i = 0; i < nums.size(); i++) {
                 int x = nums[i];
+                // 如果 target = 0，那么操作后，nums 每个数的奇偶性必须分别等于 0,1,0,1,... 即 target ^ (i%2)
                 if (((x - i) & 1) != target) { // 等价于 (x&1) != (target ^ (i%2))
                     op++;
                     if (x == g_min) {
@@ -144,6 +149,7 @@ func makeParityAlternating(nums []int) []int {
 	calc := func(target int) (int, int) {
 		op, mn, mx := 0, math.MaxInt, math.MinInt
 		for i, x := range nums {
+			// 如果 target = 0，那么操作后，nums 每个数的奇偶性必须分别等于 0,1,0,1,... 即 target ^ i%2
 			if (x-i)&1 != target { // 等价于 x&1 != target ^ i%2
 				op++
 				if x == gMin {
