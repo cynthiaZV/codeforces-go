@@ -1,0 +1,11 @@
+"idea"
+"id"
+
+"day"
+"day"
+
+"aeiou"
+""
+
+
+
