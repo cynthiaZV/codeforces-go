@@ -51,18 +51,19 @@ func minCost(n int) int {
 ## 附：记忆化搜索做法
 
 ```py
+# 把 dfs 写在 class 外面，这样 cache 保存的数据可以在不同的测试数据间共享
+@cache
+def dfs(n: int) -> int:
+    if n == 1:
+        return 0
+    res = inf
+    for a in range(1, n):
+        b = n - a
+        res = min(res, dfs(a) + dfs(b) + a * b)
+    return res
+
 class Solution:
     def minCost(self, n: int) -> int:
-        @cache
-        def dfs(n: int) -> int:
-            if n == 1:
-                return 0
-            res = inf
-            for a in range(1, n):
-                b = n - a
-                res = min(res, dfs(a) + dfs(b) + a * b)
-            return res
-
         return dfs(n)
 ```
 
