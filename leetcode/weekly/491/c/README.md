@@ -1,4 +1,4 @@
-要想让答案尽量小，那么答案二进制的高位是 $0$ 比是 $1$ 更好，所以优先判断答案的高位能否是 $0$。
+要想让答案尽量小，那么答案二进制的高位是 $0$ 比是 $1$ 更好，所以优先判断答案的高位能否是 $0$，即**从高到低**依次判断答案的第 $i$ 位能不能是 $0$。
 
 如果在每一行的**能选的数字**中，都存在二进制第 $i$ 位是 $0$ 的数，那么答案的第 $i$ 位可以是 $0$，否则必须是 $1$。
 
@@ -8,7 +8,7 @@
 
 一般地，对于答案中的是 $0$ 的比特位，如果 $\textit{grid}[i][j]$ 二进制同一位上是 $1$，那么 $\textit{grid}[i][j]$ 不能选，否则可以选。从集合的角度理解，对于目前已经确定的比特位，$\textit{grid}[i][j]$ 必须是答案的**子集**。具体请看 [从集合论到位运算，常见位运算技巧分类总结](https://leetcode.cn/circle/discuss/CaOJ45/)。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+[本题视频讲解](https://www.bilibili.com/video/BV1V4PMzrEYG/?t=9m50s)，欢迎点赞关注~
 
 ```py [sol-Python3]
 class Solution:
@@ -18,7 +18,7 @@ class Solution:
         # 试填法：ans 的第 i 位能不能是 0？
         # 如果在每一行的能选的数字中，都存在第 i 位是 0 的数，那么 ans 的第 i 位可以是 0，否则必须是 1
         for i in range(mx.bit_length() - 1, -1, -1):
-            mask = ans | ((1 << i) - 1)  # mask 低于 i 的比特位全是 1
+            mask = ans | ((1 << i) - 1)  # mask 低于 i 的比特位全是 1，表示 grid[i][j] 的低位是 0 还是 1 无所谓
             for row in grid:
                 for x in row:
                     # x 的高于 i 的比特位，如果 ans 是 0，那么 x 的这一位必须也是 0
@@ -28,7 +28,7 @@ class Solution:
                         break
                 else:  # 这一行的可选数字中，第 i 位全是 1
                     ans |= 1 << i  # ans 第 i 位必须是 1
-                    break
+                    break  # 填下一位
         return ans
 ```
 
@@ -47,22 +47,20 @@ class Solution {
         // 试填法：ans 的第 i 位能不能是 0？
         // 如果在每一行的能选的数字中，都存在第 i 位是 0 的数，那么 ans 的第 i 位可以是 0，否则必须是 1
         for (int i = bitLength - 1; i >= 0; i--) {
-            int mask = ans | ((1 << i) - 1); // mask 低于 i 的比特位全是 1
+            int mask = ans | ((1 << i) - 1); // mask 低于 i 的比特位全是 1，表示 grid[i][j] 的低位是 0 还是 1 无所谓
+            next:
             for (int[] row : grid) {
-                boolean found0 = false;
                 for (int x : row) {
                     // x 的高于 i 的比特位，如果 ans 是 0，那么 x 的这一位必须也是 0
                     // x 的低于 i 的比特位，随意
                     // x 的第 i 个比特位，我们期望它是 0
                     if ((x | mask) == mask) { // x 可以选，且第 i 位是 0
-                        found0 = true;
-                        break;
+                        continue next;
                     }
                 }
-                if (!found0) { // 这一行的可选数字中，第 i 位全是 1
-                    ans |= 1 << i; // ans 第 i 位必须是 1
-                    break;
-                }
+                // 这一行的可选数字中，第 i 位全是 1
+                ans |= 1 << i; // ans 第 i 位必须是 1
+                break; // 填下一位
             }
         }
         return ans;
@@ -83,7 +81,7 @@ public:
         // 试填法：ans 的第 i 位能不能是 0？
         // 如果在每一行的能选的数字中，都存在第 i 位是 0 的数，那么 ans 的第 i 位可以是 0，否则必须是 1
         for (int i = bit_width((uint32_t) mx) - 1; i >= 0; i--) {
-            int mask = ans | ((1 << i) - 1); // mask 低于 i 的比特位全是 1
+            int mask = ans | ((1 << i) - 1); // mask 低于 i 的比特位全是 1，表示 grid[i][j] 的低位是 0 还是 1 无所谓
             for (auto& row : grid) {
                 bool found0 = false;
                 for (int x : row) {
@@ -97,7 +95,7 @@ public:
                 }
                 if (!found0) { // 这一行的可选数字中，第 i 位全是 1
                     ans |= 1 << i; // ans 第 i 位必须是 1
-                    break;
+                    break; // 填下一位
                 }
             }
         }
@@ -116,7 +114,7 @@ func minimumOR(grid [][]int) (ans int) {
 	// 试填法：ans 的第 i 位能不能是 0？
 	// 如果在每一行的能选的数字中，都存在第 i 位是 0 的数，那么 ans 的第 i 位可以是 0，否则必须是 1
 	for i := bits.Len(uint(mx)) - 1; i >= 0; i-- {
-		mask := ans | (1<<i - 1) // mask 低于 i 的比特位全是 1
+		mask := ans | (1<<i - 1) // mask 低于 i 的比特位全是 1，表示 grid[i][j] 的低位是 0 还是 1 无所谓
 	next:
 		for _, row := range grid {
 			for _, x := range row {
@@ -129,7 +127,7 @@ func minimumOR(grid [][]int) (ans int) {
 			}
 			// 这一行的可选数字中，第 i 位全是 1
 			ans |= 1 << i // ans 第 i 位必须是 1
-			break
+			break // 填下一位
 		}
 	}
 	return

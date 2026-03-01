@@ -28,7 +28,7 @@ func minimumOR(grid [][]int) (ans int) {
 			}
 			// 这一行的可选数字中，第 i 位全是 1
 			ans |= 1 << i // ans 第 i 位必须是 1
-			break
+			break // 填下一位
 		}
 	}
 	return

@@ -2,8 +2,6 @@
 
 也可以用库函数做，见 Python3 和 Go 的代码。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
-
 ```py [sol-Python3]
 class Solution:
     def trimTrailingVowels(self, s: str) -> str:

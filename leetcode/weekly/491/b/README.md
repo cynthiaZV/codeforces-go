@@ -10,7 +10,9 @@
 
 换句话说，**对于任意划分（拆分）方案，得到的答案都是** $\dfrac{n(n-1)}{2}$。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+> 所以我觉得这题很神奇，只要你的代码最终能拆分成 $n$ 个 $1$，计算结果就是对的。此外，把题目改成计算「最大总代价」，算出的结果也是一样的。
+
+[本题视频讲解](https://www.bilibili.com/video/BV1V4PMzrEYG/)，欢迎点赞关注~
 
 ```py [sol-Python3]
 class Solution:
@@ -45,6 +47,29 @@ func minCost(n int) int {
 
 - 时间复杂度：$\mathcal{O}(1)$。
 - 空间复杂度：$\mathcal{O}(1)$。
+
+## 附：记忆化搜索做法
+
+```py
+class Solution:
+    def minCost(self, n: int) -> int:
+        @cache
+        def dfs(n: int) -> int:
+            if n == 1:
+                return 0
+            res = inf
+            for a in range(1, n):
+                b = n - a
+                res = min(res, dfs(a) + dfs(b) + a * b)
+            return res
+
+        return dfs(n)
+```
+
+#### 复杂度分析
+
+- 时间复杂度：$\mathcal{O}(n^2)$。
+- 空间复杂度：$\mathcal{O}(n)$。
 
 ## 专题训练
 

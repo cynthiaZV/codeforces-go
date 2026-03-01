@@ -4,16 +4,16 @@
 
 根据这个思路，本题等价于如下两个问题：
 
-- 子数组**至少**包含 $k$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次。记作 $f_k$。
-- 子数组**至少**包含 $k+1$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次。记作 $f_{k+1}$。
+- 子数组**至少**包含 $k$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次。
+- 子数组**至少**包含 $k+1$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次。（为什么是至少有 $k$ 个而不是 $k+1$ 个？解答见 [本题视频讲解](https://www.bilibili.com/video/BV1V4PMzrEYG/?t=30m56s)）
 
-二者相减，所表达的含义就是**恰好**包含 $k$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次，所以答案为 $f_k - f_{k+1}$。
+二者相减，所表达的含义就是**恰好**包含 $k$ 个不同整数，且至少有 $k$ 个不同整数都至少出现 $m$ 次。
 
 对于每个问题，由于子数组越长越满足要求，越短越不满足要求，有单调性，所以可以用**滑动窗口**解决。如果你不了解滑动窗口，可以看视频[【基础算法精讲 03】](https://www.bilibili.com/video/BV1hd4y1r7Gq/)。
 
 如果你之前没有做过统计子数组个数的滑动窗口，推荐先完成 [2962. 统计最大元素出现至少 K 次的子数组](https://leetcode.cn/problems/count-subarrays-where-max-element-appears-at-least-k-times/)（[我的题解](https://leetcode.cn/problems/count-subarrays-where-max-element-appears-at-least-k-times/solutions/2560940/hua-dong-chuang-kou-fu-ti-dan-pythonjava-xvwg/)），这也是一道至少+统计个数的问题，且比本题要简单许多。在这篇题解中，我详细解释了 `ans += left` 这行代码的含义。
 
-下午两点 [B站@灵茶山艾府](https://space.bilibili.com/206214) 直播讲题，欢迎关注~
+[本题视频讲解](https://www.bilibili.com/video/BV1V4PMzrEYG/?t=30m56s)，欢迎点赞关注~
 
 ```py [sol-Python3]
 class Solution:
@@ -58,7 +58,7 @@ class Solution {
         long ans = 0;
         for (int x : nums) {
             // 1. 入
-            int c = cnt.merge(x, 1, Integer::sum);
+            int c = cnt.merge(x, 1, Integer::sum); // c = ++cnt[x]
             if (c == m) {
                 geM++;
             }
